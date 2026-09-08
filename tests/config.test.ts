@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config.js";
 
-const productionEnv: NodeJS.ProcessEnv = {
+const productionEnv: Record<string, string> = {
   NODE_ENV: "production",
   DATABASE_URL: "postgres://example.invalid/scout_sentinel",
   SESSION_PEPPER: "production-session-pepper-at-least-32-chars",

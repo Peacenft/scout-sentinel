@@ -1,0 +1,51 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "scout-sentinel",
+	"main": "./src/worker.ts",
+	"compatibility_date": "2026-09-08",
+	"workers_dev": true,
+	"preview_urls": false,
+	"assets": {
+		"directory": "./dist/public",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": [
+			"/v1/*",
+			"/oauth/*",
+			"/.well-known/*",
+			"/mcp",
+			"/health/*"
+		]
+	},
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	},
+	"placement": {
+		"mode": "smart"
+	},
+	"secrets": {
+		"required": [
+			"SESSION_PEPPER",
+			"BOOTSTRAP_ADMIN_TOKEN",
+			"BINANCE_TOKEN_ENCRYPTION_KEY"
+		]
+	},
+	"vars": {
+		"NODE_ENV": "production",
+		"HOST": "0.0.0.0",
+		"PORT": "4100",
+		"ALLOWED_ORIGINS": "https://scout-sentinel.peacenft7.workers.dev",
+		"PUBLIC_BASE_URL": "https://scout-sentinel.peacenft7.workers.dev",
+		"BINANCE_MCP_URL": "https://agent.binance.com/mcp/agentic",
+		"BINANCE_AUTHORIZATION_SERVER_URL": "https://agent.binance.com",
+		"STATE_MAX_AGE_SECONDS": "30",
+		"MONITOR_INTERVAL_SECONDS": "60"
+	},
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "acfa59d33b6144bc863e6ee3d3107059"
+		}
+	]
+}

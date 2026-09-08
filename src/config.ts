@@ -48,7 +48,7 @@ export type AppConfig = {
   monitorIntervalSeconds: number;
 };
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export function loadConfig(env: Record<string, string | undefined> = process.env): AppConfig {
   const parsed = configSchema.parse(env);
   return {
     nodeEnv: parsed.NODE_ENV,

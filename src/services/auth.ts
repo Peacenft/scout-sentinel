@@ -1,9 +1,9 @@
-import { hash, verify } from "@node-rs/argon2";
 import { timingSafeEqual } from "node:crypto";
 import type { Database } from "../db/pool.js";
 import { inTransaction } from "../db/transaction.js";
 import { AppError } from "../errors.js";
 import { randomToken, tokenHash } from "../security/crypto.js";
+import { hashPassword, verifyPassword } from "../security/password.js";
 import { appendAuditEvent } from "./audit.js";
 
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -60,7 +60,7 @@ export async function bootstrapAdmin(
     throw new AppError(403, "bootstrap_forbidden", "The bootstrap token is invalid.");
   }
   const normalizedEmail = email.trim().toLowerCase();
-  const passwordHash = await hash(password, { algorithm: 2, memoryCost: 19_456, timeCost: 2, parallelism: 1 });
+  const passwordHash = await hashPassword(password);
   return inTransaction(database, async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('bootstrap-admin'))");
     const count = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM users WHERE identity_type = 'operator'");
@@ -96,7 +96,7 @@ export async function createSession(
     [email.trim().toLowerCase()]
   );
   const record = result.rows[0];
-  if (!record || !record.password_hash || record.disabled_at || !(await verify(record.password_hash, password))) {
+  if (!record || !record.password_hash || record.disabled_at || !(await verifyPassword(record.password_hash, password))) {
     throw new AppError(401, "invalid_credentials", "Email or password is incorrect.");
   }
   return persistSession(database, pepper, mapUser(record), "session.created");

@@ -32,6 +32,9 @@ export async function buildApp(
     portfolioStateProvider?: PortfolioStateProvider;
     tradeExecutionProvider?: TradeExecutionProvider;
     binanceConnectionService?: BinanceConnectionService;
+  } = {},
+  runtime: {
+    serveStatic?: boolean;
   } = {}
 ): Promise<FastifyInstance> {
   const binanceConnectionService = integrations.binanceConnectionService ?? new BinanceConnectionService(database, config);
@@ -141,17 +144,18 @@ export async function buildApp(
     };
   });
 
+  const shouldServeStatic = runtime.serveStatic ?? config.nodeEnv !== "test";
   const webRoot = resolve(process.cwd(), "dist/public");
-  if (config.nodeEnv === "production" && !existsSync(webRoot)) {
+  if (shouldServeStatic && config.nodeEnv === "production" && !existsSync(webRoot)) {
     throw new Error(`Web build not found at ${webRoot}`);
   }
-  if (config.nodeEnv !== "test" && existsSync(webRoot)) {
+  if (shouldServeStatic && existsSync(webRoot)) {
     await app.register(fastifyStatic, { root: webRoot, prefix: "/", wildcard: false });
   }
 
   app.setNotFoundHandler(async (request, reply) => {
     if (
-      config.nodeEnv !== "test" &&
+      shouldServeStatic &&
       request.method === "GET" &&
       !request.url.startsWith("/v1/") &&
       !request.url.startsWith("/health/") &&

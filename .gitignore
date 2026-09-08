@@ -2,8 +2,10 @@ node_modules/
 dist/
 .pnpm-store/
 .env
+.production-secrets.local
 coverage/
 work/
 outputs/
+.neon
 *.log
 .DS_Store

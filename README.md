@@ -13,7 +13,7 @@ The current repository contains the deployable control-plane foundation, a publi
 - Single-use, five-minute dashboard access links issued only through an authenticated Sentinel MCP connection
 - Per-user Binance Agent OS OAuth using public client metadata and PKCE, with single-use state and encrypted downstream tokens
 - Read-only post-OAuth verification of `spot.getAccount`, plus stored capability evidence without stored balance values
-- Separate local-operator authentication with Argon2id password hashes
+- Separate local-operator authentication with salted PBKDF2-HMAC-SHA-256 password hashes at 600,000 iterations
 - Versioned JSON mandates with strict validation and SHA-256 document hashes
 - Decimal-safe policy evaluation for capital, assets, venues, order size, position caps, stacking, risk budget, drawdown, stale state, and protection exits
 - Live evaluation boundary that accepts proposals but obtains portfolio state only from a trusted server-side provider
@@ -94,6 +94,20 @@ Prepare an isolated PostgreSQL database whose name ends in `_test`, then run the
 TEST_DATABASE_URL=postgres://scout_sentinel:change_me@127.0.0.1:5432/scout_sentinel_test pnpm test:db:prepare
 TEST_DATABASE_URL=postgres://scout_sentinel:change_me@127.0.0.1:5432/scout_sentinel_test pnpm test:integration
 ```
+
+## Cloudflare deployment
+
+The Worker uses Cloudflare static assets for the UI and Hyperdrive for the Neon PostgreSQL connection. `wrangler.jsonc` declares the required bindings, production variables, required secrets, observability, and smart placement.
+
+Generate the three production secrets once, upload them, build, and deploy:
+
+```bash
+pnpm secrets:generate
+wrangler secret bulk .production-secrets.local
+pnpm cloudflare:deploy
+```
+
+The local secret file is mode `0600` and ignored by Git. Keep it private because it contains the one-time operator bootstrap token and the key used to encrypt Binance OAuth tokens. Run `pnpm cloudflare:types` after any binding or variable change. Run `pnpm cloudflare:check` before later deployments.
 
 ## Binance connection status
 

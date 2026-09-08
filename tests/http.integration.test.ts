@@ -12,7 +12,9 @@ import { BinanceConnectionService, type BinanceAccountVerifier } from "../src/se
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
-if (databaseUrl && !databaseUrl.endsWith("_test")) throw new Error("TEST_DATABASE_URL must target a database ending in _test");
+if (databaseUrl && !decodeURIComponent(new URL(databaseUrl).pathname).endsWith("_test")) {
+  throw new Error("TEST_DATABASE_URL must target a database ending in _test");
+}
 const integrationDatabaseUrl = databaseUrl ?? "postgres://unused/disabled_test";
 
 describeWithDatabase("HTTP and PostgreSQL integration", () => {
