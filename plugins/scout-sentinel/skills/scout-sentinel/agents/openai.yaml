@@ -1,0 +1,15 @@
+interface:
+  display_name: "Scout + Sentinel"
+  short_description: "Binance opportunity scout with risk controls"
+  default_prompt: "Use $scout-sentinel to review my Binance allocation request safely."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "binance-mcp-server"
+      description: "Official Binance Agent OS market and account tools"
+      transport: "streamable_http"
+      url: "https://agent.binance.com/mcp/agentic"
+
+policy:
+  allow_implicit_invocation: true

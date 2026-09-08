@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "binance-mcp-server": {
+      "type": "http",
+      "url": "https://agent.binance.com/mcp/agentic",
+      "note": "Official Binance Agent OS MCP server. OAuth is requested on first connection. Scout uses read tools only."
+    }
+  }
+}

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: scout_sentinel
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: scout_sentinel
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - scout_sentinel_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scout_sentinel -d scout_sentinel"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  scout_sentinel_pg:
+

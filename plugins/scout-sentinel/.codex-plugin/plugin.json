@@ -1,0 +1,24 @@
+{
+  "name": "scout-sentinel",
+  "version": "0.3.0",
+  "description": "Binance opportunity discovery with deterministic risk controls and human approval",
+  "author": {
+    "name": "Scout + Sentinel Team"
+  },
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Scout + Sentinel",
+    "shortDescription": "Scout Binance opportunities with hard risk limits.",
+    "longDescription": "Scout reads live Binance markets and account state. Sentinel applies a versioned mandate, requires exact approval, and tracks confirmed positions.",
+    "developerName": "Scout + Sentinel Team",
+    "category": "Finance",
+    "capabilities": ["Live Binance reads", "Deterministic policy", "Human approval"],
+    "defaultPrompt": [
+      "Help me deploy 1,000 USDC with moderate risk.",
+      "Review my Binance Agentic account and suggest one safe action.",
+      "Check my tracked positions for protection events."
+    ],
+    "brandColor": "#F2B84B"
+  }
+}
