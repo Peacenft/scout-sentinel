@@ -4,6 +4,10 @@ Scout proposes. Sentinel decides.
 
 Scout + Sentinel is a risk control plane for Binance Agent OS. Scout can produce trade proposals from live read-only market and account tools. Sentinel applies deterministic mandate rules before any confirmation or trade request can exist.
 
+Live demo: https://scout-sentinel.peacenft7.workers.dev
+
+Sentinel MCP endpoint: `https://scout-sentinel.peacenft7.workers.dev/mcp`
+
 The current repository contains the deployable control-plane foundation, a public installation guide, and a same-origin private control room. Each private workspace can start its own Binance Agent OS OAuth connection. Account reads and trading remain fail-closed until that connection is verified and the missing portfolio and execution adapters are enabled. No route accepts browser-supplied balances, prices, exposure, profit and loss, or execution results.
 
 ## Current capabilities

@@ -7,12 +7,12 @@ import type { PortfolioStateProvider } from "../../integrations/portfolio-state-
 import { evaluateWithTrustedState } from "../../services/evaluations.js";
 import { requireAuthentication, requireUserId } from "../authenticate.js";
 
-export async function registerEvaluationRoutes(
+export function registerEvaluationRoutes(
   app: FastifyInstance,
   database: Database,
   config: AppConfig,
   provider?: PortfolioStateProvider
-): Promise<void> {
+): void {
   app.post(
     "/v1/sentinel/evaluate",
     { preHandler: requireAuthentication(database, config) },

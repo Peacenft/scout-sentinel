@@ -8,7 +8,7 @@ import { requireAuthentication, requireUserId } from "../authenticate.js";
 const idParamsSchema = z.object({ id: z.uuid() });
 const confirmSchema = z.object({ termsHash: z.string().regex(/^[a-f0-9]{64}$/) });
 
-export async function registerConfirmationRoutes(app: FastifyInstance, database: Database, config: AppConfig): Promise<void> {
+export function registerConfirmationRoutes(app: FastifyInstance, database: Database, config: AppConfig): void {
   const auth = requireAuthentication(database, config);
   app.post("/v1/evaluations/:id/confirmation", { preHandler: auth }, async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);

@@ -14,12 +14,12 @@ const executionRequestSchema = z.object({
   idempotencyKey: z.string().trim().min(16).max(128).regex(/^[A-Za-z0-9._:-]+$/)
 }).strict();
 
-export async function registerExecutionRoutes(
+export function registerExecutionRoutes(
   app: FastifyInstance,
   database: Database,
   config: AppConfig,
   providers: { portfolio?: PortfolioStateProvider; execution?: TradeExecutionProvider }
-): Promise<void> {
+): void {
   const auth = requireAuthentication(database, config);
 
   app.post("/v1/confirmations/:id/execute", { preHandler: auth }, async (request, reply) => {

@@ -4,19 +4,20 @@ import type { AppConfig } from "../../config.js";
 import type { Database } from "../../db/pool.js";
 import type { PortfolioStateProvider } from "../../integrations/portfolio-state-provider.js";
 import type { TradeExecutionProvider } from "../../integrations/trade-execution-provider.js";
-import { createSentinelMcpServer } from "../../mcp/server.js";
+import { createSentinelMcpServer, type McpLogger } from "../../mcp/server.js";
 import { verifyAgentAccess } from "../../services/oauth.js";
 import type { BinanceConnectionService } from "../../services/binance-connection.js";
 
 type Providers = { portfolio?: PortfolioStateProvider; execution?: TradeExecutionProvider };
 
-export async function registerMcpRoutes(
+export function registerMcpRoutes(
   app: FastifyInstance,
   database: Database,
   config: AppConfig,
   providers: Providers,
-  binanceConnections: BinanceConnectionService
-): Promise<void> {
+  binanceConnections: BinanceConnectionService,
+  logger?: McpLogger
+): void {
   const baseUrl = config.publicBaseUrl ?? `http://127.0.0.1:${config.port}`;
   const resource = `${baseUrl}/mcp`;
   const metadataUrl = `${baseUrl}/.well-known/oauth-protected-resource/mcp`;
@@ -45,7 +46,8 @@ export async function registerMcpRoutes(
         .send({ error: "invalid_token", error_description: "The access token is invalid or expired." });
     }
 
-    const server = createSentinelMcpServer({ database, config, access, providers, binanceConnections, logger: request.log });
+    const activeLogger = logger ?? request.log;
+    const server = createSentinelMcpServer({ database, config, access, providers, binanceConnections, logger: activeLogger });
     const transport = new StreamableHTTPServerTransport(
       { sessionIdGenerator: undefined, enableJsonResponse: true } as unknown as ConstructorParameters<typeof StreamableHTTPServerTransport>[0]
     );
@@ -54,7 +56,7 @@ export async function registerMcpRoutes(
       await server.connect(transport as unknown as Parameters<typeof server.connect>[0]);
       await transport.handleRequest(request.raw, reply.raw, request.body);
     } catch (error) {
-      request.log.error({ err: error, oauthClientId: access.clientId }, "MCP request failed");
+      activeLogger.error({ errorName: error instanceof Error ? error.name : "unknown", oauthClientId: access.clientId }, "MCP request failed");
       if (!reply.raw.headersSent) {
         reply.raw.writeHead(500, { "content-type": "application/json" });
         reply.raw.end(JSON.stringify({ jsonrpc: "2.0", error: { code: -32603, message: "Internal server error" }, id: null }));

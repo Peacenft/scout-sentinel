@@ -1,6 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { FastifyBaseLogger } from "fastify";
 import type { AppConfig } from "../config.js";
 import type { Database } from "../db/pool.js";
 import { mandateSchema, proposalSchema } from "../domain/schemas.js";
@@ -17,6 +16,11 @@ import { createDashboardAccessToken } from "../services/auth.js";
 import type { BinanceConnectionService } from "../services/binance-connection.js";
 
 type Providers = { portfolio?: PortfolioStateProvider; execution?: TradeExecutionProvider };
+export type McpLogger = {
+  info(value: unknown, message: string): void;
+  warn(value: unknown, message: string): void;
+  error(value: unknown, message: string): void;
+};
 
 function response(value: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
@@ -39,7 +43,7 @@ export function createSentinelMcpServer(input: {
   access: AgentAccess;
   providers: Providers;
   binanceConnections: BinanceConnectionService;
-  logger: FastifyBaseLogger;
+  logger: McpLogger;
 }): McpServer {
   const server = new McpServer({ name: "scout-sentinel", version: "0.3.0" });
   const baseUrl = input.config.publicBaseUrl ?? `http://127.0.0.1:${input.config.port}`;

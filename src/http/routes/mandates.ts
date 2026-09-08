@@ -5,7 +5,7 @@ import { mandateSchema } from "../../domain/schemas.js";
 import { createMandate, getActiveMandate } from "../../services/mandates.js";
 import { requireAuthentication, requireUserId } from "../authenticate.js";
 
-export async function registerMandateRoutes(app: FastifyInstance, database: Database, config: AppConfig): Promise<void> {
+export function registerMandateRoutes(app: FastifyInstance, database: Database, config: AppConfig): void {
   const auth = requireAuthentication(database, config);
   app.post("/v1/mandates", { preHandler: auth }, async (request, reply) => {
     const document = mandateSchema.parse(request.body);

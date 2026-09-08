@@ -1,10 +1,9 @@
 import { z } from "zod";
 
-const configSchema = z.object({
+const baseConfigSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   HOST: z.string().default("127.0.0.1"),
   PORT: z.coerce.number().int().min(1).max(65535).default(4100),
-  DATABASE_URL: z.string().min(1),
   SESSION_PEPPER: z.string().min(32),
   BOOTSTRAP_ADMIN_TOKEN: z.string().min(32),
   ALLOWED_ORIGINS: z.string().default("http://127.0.0.1:3000"),
@@ -31,12 +30,13 @@ const configSchema = z.object({
     }
   }
 });
+const configSchema = z.object({ DATABASE_URL: z.string().min(1) }).and(baseConfigSchema);
 
 export type AppConfig = {
   nodeEnv: "development" | "test" | "production";
   host: string;
   port: number;
-  databaseUrl: string;
+  databaseUrl?: string;
   sessionPepper: string;
   bootstrapAdminToken: string;
   allowedOrigins: ReadonlySet<string>;
@@ -48,13 +48,12 @@ export type AppConfig = {
   monitorIntervalSeconds: number;
 };
 
-export function loadConfig(env: Record<string, string | undefined> = process.env): AppConfig {
-  const parsed = configSchema.parse(env);
+function mapConfig(parsed: z.infer<typeof baseConfigSchema>, databaseUrl?: string): AppConfig {
   return {
     nodeEnv: parsed.NODE_ENV,
     host: parsed.HOST,
     port: parsed.PORT,
-    databaseUrl: parsed.DATABASE_URL,
+    ...(databaseUrl ? { databaseUrl } : {}),
     sessionPepper: parsed.SESSION_PEPPER,
     bootstrapAdminToken: parsed.BOOTSTRAP_ADMIN_TOKEN,
     allowedOrigins: new Set(parsed.ALLOWED_ORIGINS.split(",").map((value) => value.trim()).filter(Boolean)),
@@ -65,4 +64,13 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     stateMaxAgeSeconds: parsed.STATE_MAX_AGE_SECONDS,
     monitorIntervalSeconds: parsed.MONITOR_INTERVAL_SECONDS
   };
+}
+
+export function loadConfig(env: Record<string, string | undefined> = process.env): AppConfig {
+  const parsed = configSchema.parse(env);
+  return mapConfig(parsed, parsed.DATABASE_URL);
+}
+
+export function loadWorkerConfig(env: Record<string, string | undefined>): AppConfig {
+  return mapConfig(baseConfigSchema.parse(env));
 }

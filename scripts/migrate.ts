@@ -4,6 +4,7 @@ import { loadConfig } from "../src/config.js";
 import { resolve } from "node:path";
 
 const config = loadConfig();
+if (!config.databaseUrl) throw new Error("DATABASE_URL is required.");
 const database = createDatabase(config.databaseUrl);
 const migrationsDirectory = resolve(process.cwd(), "migrations");
 

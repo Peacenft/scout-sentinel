@@ -13,3 +13,18 @@ export function createDatabase(connectionString: string): Database {
     application_name: "scout-sentinel"
   });
 }
+
+export function createLazyDatabase(getConnectionString: () => string): Database {
+  let database: Database | undefined;
+  const getDatabase = (): Database => {
+    database ??= createDatabase(getConnectionString());
+    return database;
+  };
+  return new Proxy({} as Database, {
+    get(_target, property) {
+      const activeDatabase = getDatabase();
+      const value = Reflect.get(activeDatabase, property);
+      return typeof value === "function" ? value.bind(activeDatabase) : value;
+    }
+  });
+}

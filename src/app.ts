@@ -25,7 +25,7 @@ import { listAgentConnections } from "./services/oauth.js";
 import { registerBinanceRoutes } from "./http/routes/binance.js";
 import { BinanceConnectionService } from "./services/binance-connection.js";
 
-export async function buildApp(
+export function buildApp(
   config: AppConfig,
   database: Database,
   integrations: {
@@ -35,11 +35,23 @@ export async function buildApp(
   } = {},
   runtime: {
     serveStatic?: boolean;
+    useConsoleLogger?: boolean;
   } = {}
-): Promise<FastifyInstance> {
+): FastifyInstance {
   const binanceConnectionService = integrations.binanceConnectionService ?? new BinanceConnectionService(database, config);
+  const consoleLogger = runtime.useConsoleLogger ? {
+    info(value: unknown, message: string) {
+      console.log(JSON.stringify({ level: "info", time: new Date().toISOString(), value, message }));
+    },
+    warn(value: unknown, message: string) {
+      console.warn(JSON.stringify({ level: "warn", time: new Date().toISOString(), value, message }));
+    },
+    error(value: unknown, message: string) {
+      console.error(JSON.stringify({ level: "error", time: new Date().toISOString(), value, message }));
+    }
+  } : undefined;
   const app = Fastify({
-    logger: {
+    logger: runtime.useConsoleLogger ? false : {
       level: config.nodeEnv === "production" ? "info" : "debug",
       redact: {
         paths: ["req.headers.authorization", "req.headers.cookie", "req.headers['x-bootstrap-token']", "res.headers['set-cookie']"],
@@ -47,6 +59,7 @@ export async function buildApp(
       }
     },
     logController: new LogController({ disableRequestLogging: true }),
+    pluginTimeout: runtime.useConsoleLogger ? 0 : 10_000,
     requestIdHeader: "x-request-id",
     trustProxy: config.nodeEnv === "production"
   });
@@ -54,21 +67,25 @@ export async function buildApp(
   app.decorateRequest("authenticatedUser", null);
   app.decorateRequest("sessionToken", null);
   app.addHook("onRequest", async (request) => {
-    request.log.info({
+    const entry = {
       req: {
         method: request.method,
         url: request.url.split("?")[0],
         host: request.hostname,
         remoteAddress: request.ip
       }
-    }, "incoming request");
+    };
+    if (consoleLogger) consoleLogger.info({ requestId: request.id, ...entry }, "incoming request");
+    else request.log.info(entry, "incoming request");
   });
   app.addHook("onResponse", async (request, reply) => {
-    request.log.info({ res: { statusCode: reply.statusCode } }, "request completed");
+    const entry = { requestId: request.id, res: { statusCode: reply.statusCode } };
+    if (consoleLogger) consoleLogger.info(entry, "request completed");
+    else request.log.info(entry, "request completed");
   });
-  await app.register(cookie);
-  await app.register(helmet);
-  await app.register(rateLimit, {
+  app.register(cookie);
+  app.register(helmet);
+  app.register(rateLimit, {
     max: 120,
     timeWindow: "1 minute",
     allowList: (request) => {
@@ -78,7 +95,7 @@ export async function buildApp(
     }
   });
 
-  await registerOAuthRoutes(app, database, config);
+  registerOAuthRoutes(app, database, config);
 
   app.addHook("onRequest", async (request) => {
     if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return;
@@ -95,20 +112,20 @@ export async function buildApp(
     return reply.send({ status: "ready" });
   });
 
-  await registerAuthRoutes(app, database, config);
-  await registerBinanceRoutes(app, database, config, binanceConnectionService);
-  await registerMandateRoutes(app, database, config);
-  await registerAuditRoutes(app, database, config);
-  await registerEvaluationRoutes(app, database, config, integrations.portfolioStateProvider);
-  await registerConfirmationRoutes(app, database, config);
-  await registerExecutionRoutes(app, database, config, {
+  registerAuthRoutes(app, database, config);
+  registerBinanceRoutes(app, database, config, binanceConnectionService);
+  registerMandateRoutes(app, database, config);
+  registerAuditRoutes(app, database, config);
+  registerEvaluationRoutes(app, database, config, integrations.portfolioStateProvider);
+  registerConfirmationRoutes(app, database, config);
+  registerExecutionRoutes(app, database, config, {
     ...(integrations.portfolioStateProvider ? { portfolio: integrations.portfolioStateProvider } : {}),
     ...(integrations.tradeExecutionProvider ? { execution: integrations.tradeExecutionProvider } : {})
   });
-  await registerMcpRoutes(app, database, config, {
+  registerMcpRoutes(app, database, config, {
     ...(integrations.portfolioStateProvider ? { portfolio: integrations.portfolioStateProvider } : {}),
     ...(integrations.tradeExecutionProvider ? { execution: integrations.tradeExecutionProvider } : {})
-  }, binanceConnectionService);
+  }, binanceConnectionService, consoleLogger);
 
   if (config.nodeEnv !== "test" && integrations.portfolioStateProvider) {
     let stopMonitor: (() => void) | undefined;
@@ -150,7 +167,7 @@ export async function buildApp(
     throw new Error(`Web build not found at ${webRoot}`);
   }
   if (shouldServeStatic && existsSync(webRoot)) {
-    await app.register(fastifyStatic, { root: webRoot, prefix: "/", wildcard: false });
+    app.register(fastifyStatic, { root: webRoot, prefix: "/", wildcard: false });
   }
 
   app.setNotFoundHandler(async (request, reply) => {
@@ -187,7 +204,9 @@ export async function buildApp(
         error: { code: "rate_limit_exceeded", message: "Too many requests. Wait and try again.", requestId: request.id }
       });
     }
-    request.log.error({ err: error }, "request failed");
+    const entry = { requestId: request.id, errorName: error instanceof Error ? error.name : "unknown" };
+    if (consoleLogger) consoleLogger.error(entry, "request failed");
+    else request.log.error({ err: error }, "request failed");
     return reply.code(500).send({
       error: { code: "internal_error", message: "The request could not be completed.", requestId: request.id }
     });

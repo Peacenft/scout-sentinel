@@ -10,7 +10,7 @@ const querySchema = z.object({
   beforeSequence: z.string().regex(/^\d+$/).optional()
 });
 
-export async function registerAuditRoutes(app: FastifyInstance, database: Database, config: AppConfig): Promise<void> {
+export function registerAuditRoutes(app: FastifyInstance, database: Database, config: AppConfig): void {
   const auth = requireAuthentication(database, config);
   app.get("/v1/audit", { preHandler: auth }, async (request) => {
     const query = querySchema.parse(request.query);

@@ -12,12 +12,12 @@ const callbackSchema = z.object({
   error: z.string().max(200).optional()
 }).passthrough();
 
-export async function registerBinanceRoutes(
+export function registerBinanceRoutes(
   app: FastifyInstance,
   database: Database,
   config: AppConfig,
   service: BinanceConnectionService
-): Promise<void> {
+): void {
   const auth = requireAuthentication(database, config);
 
   app.get("/oauth/binance/client.json", async (_request, reply) => reply

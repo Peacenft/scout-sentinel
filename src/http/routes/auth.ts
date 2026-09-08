@@ -23,7 +23,7 @@ function setSessionCookie(reply: import("fastify").FastifyReply, config: AppConf
   });
 }
 
-export async function registerAuthRoutes(app: FastifyInstance, database: Database, config: AppConfig): Promise<void> {
+export function registerAuthRoutes(app: FastifyInstance, database: Database, config: AppConfig): void {
   app.post("/v1/auth/bootstrap", { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } }, async (request, reply) => {
     const input = credentialsSchema.parse(request.body);
     const bootstrapToken = request.headers["x-bootstrap-token"];

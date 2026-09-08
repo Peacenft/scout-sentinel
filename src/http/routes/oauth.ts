@@ -85,7 +85,7 @@ async function optionalSessionUser(request: FastifyRequest, database: Database, 
   }
 }
 
-export async function registerOAuthRoutes(app: FastifyInstance, database: Database, config: AppConfig): Promise<void> {
+export function registerOAuthRoutes(app: FastifyInstance, database: Database, config: AppConfig): void {
   const baseUrl = config.publicBaseUrl ?? `http://127.0.0.1:${config.port}`;
   const resource = `${baseUrl}/mcp`;
 
